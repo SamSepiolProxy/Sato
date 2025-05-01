@@ -60,6 +60,21 @@ $PredefinedScopes = @{
     KeyVault = "https://vault.azure.net/.default offline_access openid"
 }
 
+# map aliases → GUIDs
+$predefinedClientIDs = @{
+    o365mgmt      = '00b41c95-dab0-4487-9791-b9d2c32c80f2'
+    azcli         = '04b07795-8ddb-461a-bbee-02f9e1bf7b46'
+    azps          = '1950a258-227b-4e31-a9cf-717495945fc2'
+    teams         = '1fec8e78-bce4-4aaf-ab1b-5451cc387264'
+    msteams       = '1fec8e78-bce4-4aaf-ab1b-5451cc387264'
+    msoffice      = 'd3590ed6-52b3-4102-aeff-aad2292ab01c'
+    aadps         = '1b730954-1685-4b74-9bfd-dac224a7b894'
+    msedge        = 'ecd6b820-32c2-49b6-98a6-444530e5a77a'
+    edge          = 'ecd6b820-32c2-49b6-98a6-444530e5a77a'
+    msbroker      = '29d9ed98-a469-4536-ade2-f981bc1d605e'
+    broker        = '29d9ed98-a469-4536-ade2-f981bc1d605e'
+    companyportal = '9ba1a5c7-f17a-4de9-a1f1-6178c8d51223'
+}
 
 $PredefinedGrantTypes = @(
     "client_credentials",
@@ -67,14 +82,34 @@ $PredefinedGrantTypes = @(
     "refresh_token",
     "device_code",
     "jwt_assertion",
-    "jwt_assertion_sign"
+    "jwt_assertion_sign", 
+    "estsauthcookie"
 )
+
+$uaMap = @{
+    edge            = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
+    edge_windows    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
+    edge_android    = "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.66 Mobile Safari/537.36 EdgA/118.0.2088.66"
+    chrome          = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    chrome_windows  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    chrome_android  = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.3"
+    chrome_macos    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    chrome_linux    = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.3"
+    chrome_ios      = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/119.0.6045.109 Mobile/15E148 Safari/604."
+    firefox         = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0"
+    firefox_windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0"
+    firefox_macos   = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/119.0"
+    firefox_ubuntu  = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0"
+    safari          = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.1"
+    safari_macos    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.1"
+    safari_ios      = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604."
+}
 
 
 function Invoke-Sato {
     param (
         [Parameter(Mandatory = $true)]
-        [ValidateSet("client_credentials", "password", "refresh_token", "device_code", "jwt_assertion", "jwt_assertion_sign")]
+        [ValidateSet("client_credentials", "password", "refresh_token", "device_code", "jwt_assertion", "jwt_assertion_sign", "estsauthcookie")]
         [string]$GrantType,
 
         [Parameter(Mandatory = $true)]
@@ -91,6 +126,9 @@ function Invoke-Sato {
 
         [Parameter()]
         [string]$Password,
+
+        [Parameter()]
+        [string]$Cookie,
 
         [Parameter()]
         [string]$Scope = "https://graph.windows.net/.default offline_access openid",
@@ -127,7 +165,36 @@ function Invoke-Sato {
         [string]$PredefinedScope,
 
         [Parameter()]
-        [string]$UserAgent = 'azsdk-net-Identity/1.11.4 (.NET Framework 4.8.9290.0; Microsoft Windows 10.0.19045 )'
+        [string]$SaveToVar = "access_token",
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(
+            'o365mgmt',
+            'azcli',
+            'azps',
+            'teams',
+            'msteams',
+            'msoffice',
+            'aadps',
+            'msedge',
+            'edge',
+            'msbroker',
+            'broker',
+            'companyportal'
+        )]
+        [string]$PredefinedClientID,
+
+        [Parameter()]
+        [string]$UserAgent = 'azsdk-net-Identity/1.11.4 (.NET Framework 4.8.9290.0; Microsoft Windows 10.0.19045 )',
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(
+            'edge','edge_windows','edge_android',
+            'chrome','chrome_windows','chrome_android','chrome_macos','chrome_linux','chrome_ios',
+            'firefox','firefox_windows','firefox_macos','firefox_ubuntu',
+            'safari','safari_macos','safari_ios'
+        )]
+        [string]$PredefinedUserAgent
     )
 
     # Set up the HTTP headers for the authentication requests.
@@ -148,6 +215,15 @@ function Invoke-Sato {
 
     if ($PredefinedScope) {
         $Scope = $PredefinedScopes[$PredefinedScope]
+    }
+
+        # if they picked a predefined alias, swap in its GUID
+    if ($PredefinedClientID) {
+        $ClientID = $predefinedClientIDs[$PredefinedClientID]
+    }
+
+    if ($PredefinedUserAgent) {
+        $UserAgent = $uaMap[$PredefinedUserAgent]
     }
 
     
@@ -185,6 +261,10 @@ function Invoke-Sato {
             $response = Get-DeviceCodeToken -TenantID $TenantID -ClientID $ClientID -Scope $Scope -UseCAE:$UseCAE -Headers $Headers
         }
 
+        "estsauthcookie" {
+            $response = Get-EstsAuthCookieToken -ClientID $ClientID -Scope $Scope -ESTSAuthCookie:$Cookie
+        }
+
         "jwt_assertion" {
             if ($Certificate) {
                 Write-Host "Using local certificate for JWT assertion" -ForegroundColor Cyan
@@ -215,6 +295,8 @@ function Invoke-Sato {
     if ($response) {
         Write-Host "Access Token:" -ForegroundColor DarkGreen
         Write-Output $response.access_token
+        Set-Variable -Name $SaveToVar -Value $response -Scope Global
+        Write-Host "Tokens saved to variable: `$${SaveToVar}" -ForegroundColor Green
 
         if ($response.refresh_token) {
             Write-Host "Refresh Token:" -ForegroundColor DarkGreen
