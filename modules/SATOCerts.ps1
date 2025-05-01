@@ -140,7 +140,10 @@ function Get-CertificateToken {
         [string]$AppID,
 
         [Parameter()]
-        [string]$Scope = "https://graph.windows.net/.default offline_access openid"
+        [string]$Scope = "https://graph.windows.net/.default offline_access openid",
+
+        [Parameter(Mandatory=$true)]
+        [Hashtable]$Headers
     )
 
     $audience = "https://login.microsoftonline.com/$TenantID/oauth2/v2.0/token"
@@ -170,7 +173,6 @@ function Get-CertificateToken {
 
     
     $uri = "https://login.microsoftonline.com/$TenantID/oauth2/v2.0/token"
-    $headers = @{'Content-Type' = 'application/x-www-form-urlencoded'}
     $body = @{
         'client_id' = $AppID
         'client_assertion' = $signedJWT
@@ -181,7 +183,7 @@ function Get-CertificateToken {
 
     try {
         
-        $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+        $response = Invoke-RestMethod -Uri $uri -Method POST -Body $body -Headers $Headers
         return $response
     } catch {
         Write-Error "Failed to obtain access token: $_"

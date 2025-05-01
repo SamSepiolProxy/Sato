@@ -16,7 +16,10 @@ function Get-PasswordToken {
         [string]$Password,
 
         [Parameter(Mandatory = $true)]
-        [string]$Scope
+        [string]$Scope,
+
+        [Parameter(Mandatory=$true)]
+        [Hashtable]$Headers
     )
 
     try {
@@ -29,7 +32,7 @@ function Get-PasswordToken {
             scope      = $Scope
         }
 
-        $response = Invoke-RestMethod -Uri $Url -Method POST -ContentType "application/x-www-form-urlencoded" -Body $RequestParams
+        $response = Invoke-RestMethod -Uri $Url -Method POST -Body $RequestParams -Headers $Headers
         return $response
     } catch {
         Write-Error "Error obtaining password-based access token: $_"
@@ -48,7 +51,10 @@ function Get-ClientCredentialsToken {
         [string]$ClientSecret,
 
         [Parameter(Mandatory = $true)]
-        [string]$Scope
+        [string]$Scope,
+
+        [Parameter(Mandatory=$true)]
+        [Hashtable]$Headers
     )
 
     try {
@@ -60,7 +66,7 @@ function Get-ClientCredentialsToken {
             scope         = $Scope
         }
 
-        $response = Invoke-RestMethod -Uri $Url -Method POST -ContentType "application/x-www-form-urlencoded" -Body $RequestParams
+        $response = Invoke-RestMethod -Uri $Url -Method POST -Body $RequestParams -Headers $Headers
         return $response
     } catch {
         Write-Error "Error obtaining client credentials-based access token: $_"
@@ -79,7 +85,10 @@ function Get-RefreshToken {
         [string]$RefreshToken,
 
         [Parameter(Mandatory = $true)]
-        [string]$Scope
+        [string]$Scope,
+
+        [Parameter(Mandatory=$true)]
+        [Hashtable]$Headers
     )
 
     try {
@@ -91,7 +100,7 @@ function Get-RefreshToken {
             scope         = $Scope
         }
 
-        $response = Invoke-RestMethod -Uri $Url -Method POST -ContentType "application/x-www-form-urlencoded" -Body $RequestParams
+        $response = Invoke-RestMethod -Uri $Url -Method POST -Body $RequestParams -Headers $Headers
         return $response
     } catch {
         Write-Error "Error obtaining refresh token-based access token: $_"
@@ -108,10 +117,13 @@ function Get-DeviceCodeToken {
         [string]$ClientID,  # Default to Microsoft Office client ID
 
         [Parameter()]
-        [string]$Scope ,
+        [string]$Scope,
 
         [Parameter()]
-        [switch]$UseCAE
+        [switch]$UseCAE,
+
+        [Parameter(Mandatory=$true)]
+        [Hashtable]$Headers
     )
 
     try {
@@ -122,7 +134,7 @@ function Get-DeviceCodeToken {
             scope     = $Scope
         }
 
-        $authResponse = Invoke-RestMethod -Uri $deviceCodeUrl -Method Post -ContentType "application/x-www-form-urlencoded" -Body $deviceCodeBody
+        $authResponse = Invoke-RestMethod -Uri $deviceCodeUrl -Method Post -Body $deviceCodeBody -Headers $Headers
         
         
         Write-Host $authResponse.message -ForegroundColor Yellow
@@ -156,7 +168,7 @@ function Get-DeviceCodeToken {
             }
 
             try {
-                $response = Invoke-RestMethod -Uri $tokenUrl -Method Post -ContentType "application/x-www-form-urlencoded" -Body $tokenBody -ErrorAction SilentlyContinue
+                $response = Invoke-RestMethod -Uri $tokenUrl -Method Post -Body $tokenBody -Headers $Headers -ErrorAction SilentlyContinue
             } catch {
                 $errorDetails = $_.ErrorDetails.Message | ConvertFrom-Json
                 $continue = $errorDetails.error -eq "authorization_pending"

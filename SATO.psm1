@@ -124,10 +124,28 @@ function Invoke-Sato {
 
         [Parameter(Mandatory = $false)]
         [ValidateSet("MsGraph", "MSTeams", "Office", "Outlook", "WinGraph", "CoreARM", "MaARM", "IntuneMam", "SharePoint", "OneDrive", "KeyVault")]
-        [string]$PredefinedScope
+        [string]$PredefinedScope,
+
+        [Parameter()]
+        [string]$UserAgent = 'azsdk-net-Identity/1.11.4 (.NET Framework 4.8.9290.0; Microsoft Windows 10.0.19045 )'
     )
 
-    
+    # Set up the HTTP headers for the authentication requests.
+    $headers = @{
+        "Host"                          = "login.microsoftonline.com"
+        "X-Client-Sku"                  = "MSAL.Desktop"
+        "X-Client-Ver"                  = "4.61.3.0"
+        "X-Client-Os"                   = "Windows 10 Pro"
+        "Client-Request-Id"             = "b86490af-0d7c-4510-ac4f-eb0b6a9c2ff0"
+        "Return-Client-Request-Id"      = "true"
+        "X-App-Name"                    = "UnknownClient"
+        "X-App-Ver"                     = "0.0.0.0"
+        "Content-Type"                  = "application/x-www-form-urlencoded"
+        "X-Ms-Client-Request-Id"        = "6121e2fb-8d02-4559-954a-7f7b24ddb757"
+        "X-Ms-Return-Client-Request-Id" = "true"
+        "User-Agent"                    = $UserAgent
+    }
+
     if ($PredefinedScope) {
         $Scope = $PredefinedScopes[$PredefinedScope]
     }
@@ -152,25 +170,25 @@ function Invoke-Sato {
 
     switch ($GrantType) {
         "password" {
-            $response = Get-PasswordToken -TenantID $TenantID -ClientID $ClientID -Username $Username -Password $Password -Scope $Scope
+            $response = Get-PasswordToken -TenantID $TenantID -ClientID $ClientID -Username $Username -Password $Password -Scope $Scope -Headers $Headers
         }
 
         "client_credentials" {
-            $response = Get-ClientCredentialsToken -TenantID $TenantID -ClientID $ClientID -ClientSecret $ClientSecret -Scope $Scope
+            $response = Get-ClientCredentialsToken -TenantID $TenantID -ClientID $ClientID -ClientSecret $ClientSecret -Scope $Scope -Headers $Headers
         }
 
         "refresh_token" {
-            $response = Get-RefreshToken -TenantID $TenantID -ClientID $ClientID -RefreshToken $RefreshToken -Scope $Scope
+            $response = Get-RefreshToken -TenantID $TenantID -ClientID $ClientID -RefreshToken $RefreshToken -Scope $Scope -Headers $Headers
         }
 
         "device_code" {
-            $response = Get-DeviceCodeToken -TenantID $TenantID -ClientID $ClientID -Scope $Scope -UseCAE:$UseCAE
+            $response = Get-DeviceCodeToken -TenantID $TenantID -ClientID $ClientID -Scope $Scope -UseCAE:$UseCAE -Headers $Headers
         }
 
         "jwt_assertion" {
             if ($Certificate) {
                 Write-Host "Using local certificate for JWT assertion" -ForegroundColor Cyan
-                $response = Get-CertificateToken -ClientCertificate $Certificate -TenantID $TenantID -AppID $AppID -Scope $Scope
+                $response = Get-CertificateToken -ClientCertificate $Certificate -TenantID $TenantID -AppID $AppID -Scope $Scope -Headers $Headers
             } else {
                 Write-Error "A certificate must be provided for JWT assertion."
                 return
